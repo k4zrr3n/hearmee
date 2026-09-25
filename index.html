@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HearMe — Платформа анонимных обращений</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f3ff',
+                            100: '#e1e7fe',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            900: '#1e1b4b',
+                            dark: '#0f1123',
+                            card: 'rgba(23, 27, 54, 0.75)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 4s infinite ease-in-out',
+                        'float-1': 'floatOne 12s infinite ease-in-out',
+                        'float-2': 'floatTwo 16s infinite ease-in-out',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: 0.4, transform: 'scale(1)' },
+                            '50%': { opacity: 0.7, transform: 'scale(1.08)' },
+                        },
+                        floatOne: {
+                            '0%, 100%': { transform: 'translate(0px, 0px)' },
+                            '50%': { transform: 'translate(30px, -40px)' },
+                        },
+                        floatTwo: {
+                            '0%, 100%': { transform: 'translate(0px, 0px)' },
+                            '50%': { transform: 'translate(-40px, 30px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0d1b;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(23, 28, 58, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-input {
+            background: rgba(15, 18, 38, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+        .glass-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+            outline: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 18, 38, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+    </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between">
+
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-900/40 rounded-full blur-3xl animate-float-1 animate-pulse-glow"></div>
+        <div class="absolute top-1/2 -right-32 w-96 h-96 bg-purple-900/30 rounded-full blur-3xl animate-float-2 animate-pulse-glow"></div>
+        <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-blue-900/30 rounded-full blur-3xl animate-float-1"></div>
+    </div>
+
+    <header class="relative z-10 border-b border-white/10 glass-panel sticky top-0">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchRole('student')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid font-bold text-xl text-white fa-shield-heart"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent">HearMe</h1>
+                    <p class="text-xs text-indigo-300/70 font-medium">Тебя услышат и помогут</p>
+                </div>
+            </div>
+
+            <!-- Role Selector Buttons -->
+            <div class="flex bg-slate-900/80 p-1 rounded-xl border border-white/10 text-xs sm:text-sm">
+                <button id="nav-student" onclick="switchRole('student')" class="px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-white bg-indigo-600 shadow-md">
+                    <i class="fa-solid fa-user-graduate mr-1"></i> Ученик
+                </button>
+                <button id="nav-psychologist" onclick="switchRole('psychologist')" class="px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-user-nurse mr-1"></i> Психолог
+                </button>
+                <button id="nav-director" onclick="switchRole('director')" class="px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-user-tie mr-1"></i> Директор
+                </button>
+                <button id="nav-dev" onclick="switchRole('dev')" class="px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-code mr-1"></i> Dev
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10 max-w-5xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- ==================== VIEW 1: STUDENT ==================== -->
+        <section id="view-student" class="space-y-8">
+            <!-- Hero Banner -->
+            <div class="glass-panel rounded-2xl p-6 sm:p-8 border border-indigo-500/20 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-indigo-400">
+                    <i class="fa-solid fa-hand-holding-heart text-9xl"></i>
+                </div>
+                <div class="max-w-2xl">
+                    <span class="inline-block px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold mb-3 border border-indigo-500/30">
+                        <i class="fa-solid fa-lock text-xs mr-1"></i> 100% Анонимно
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2">Ты не один. Расскажи нам, что случилось.</h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Никто не узнает твоё имя или номер телефона. Твоё обращение увидит только школьный психолог.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tabs: Send New vs Track Existing -->
+            <div class="flex border-b border-white/10 space-x-6 text-sm font-medium">
+                <button id="tab-btn-send" onclick="switchStudentTab('send')" class="pb-3 text-indigo-400 border-b-2 border-indigo-500 font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Отправить обращение
+                </button>
+                <button id="tab-btn-track" onclick="switchStudentTab('track')" class="pb-3 text-slate-400 hover:text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i> Проверить статус / Чат
+                </button>
+            </div>
+
+            <!-- TAB 1: Send Form -->
+            <div id="student-tab-send" class="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
+                <form id="report-form" onsubmit="handleReportSubmit(event)" class="space-y-6">
+                    
+                    <!-- School Selection & Code -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-2">Выберите школу *</label>
+                            <select id="student-school-select" required class="w-full glass-input rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="" disabled selected>Загрузка школ...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-2">Класс (опционально)</label>
+                            <input type="text" id="student-class" placeholder="Например: 8-Б" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-2">Код школы *</label>
+                            <div class="relative">
+                                <input type="password" id="student-school-code" required placeholder="Введите код" class="w-full glass-input rounded-xl px-4 py-3 text-sm pr-10">
+                                <button type="button" onclick="togglePasswordVisibility('student-school-code', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category selection -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-2">Тема / Категория *</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="Буллинг / Травля" required class="peer hidden">
+                                <div class="glass-input peer-checked:border-indigo-500 peer-checked:bg-indigo-600/30 rounded-xl p-3 text-center text-xs sm:text-sm font-medium transition hover:border-slate-500">
+                                    🚨 Буллинг / Травля
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="Проблемы с учебой" class="peer hidden">
+                                <div class="glass-input peer-checked:border-indigo-500 peer-checked:bg-indigo-600/30 rounded-xl p-3 text-center text-xs sm:text-sm font-medium transition hover:border-slate-500">
+                                    📚 Учеба / Оценки
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="Семья / Дом" class="peer hidden">
+                                <div class="glass-input peer-checked:border-indigo-500 peer-checked:bg-indigo-600/30 rounded-xl p-3 text-center text-xs sm:text-sm font-medium transition hover:border-slate-500">
+                                    🏠 Семья / Дома
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="Личное / Психология" class="peer hidden">
+                                <div class="glass-input peer-checked:border-indigo-500 peer-checked:bg-indigo-600/30 rounded-xl p-3 text-center text-xs sm:text-sm font-medium transition hover:border-slate-500">
+                                    💭 Тревога / Стресс
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Text -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-2">Опиши ситуацию подробнее *</label>
+                        <textarea id="student-text" required rows="4" placeholder="Напиши обо всём, что тебя беспокоит. Мы на твоей стороне." class="w-full glass-input rounded-xl p-4 text-sm resize-none"></textarea>
+                    </div>
+
+                    <!-- File attachment -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-2">Прикрепить фото или скриншот (опционально)</label>
+                        <input type="file" id="student-file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/40 file:text-indigo-200 hover:file:bg-indigo-600/60 cursor-pointer glass-input rounded-xl p-2">
+                    </div>
+
+                    <!-- Urgent Check Question -->
+                    <div class="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl space-y-3">
+                        <label class="block text-sm font-semibold text-rose-200 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400 animate-pulse"></i>
+                            Тебе или кому-то угрожает опасность прямо сейчас?
+                        </label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="radio" name="is_urgent" value="yes" class="text-rose-500 focus:ring-rose-500">
+                                <span class="text-xs text-rose-300 font-medium">Да, нужна срочная помощь</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="radio" name="is_urgent" value="no" checked class="text-indigo-500 focus:ring-indigo-500">
+                                <span class="text-xs text-slate-300">Нет, стандартное обращение</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base">
+                        <i class="fa-solid fa-paper-plane"></i> Отправить анонимно
+                    </button>
+                </form>
+            </div>
+
+            <!-- TAB 2: Track status and chat -->
+            <div id="student-tab-track" class="glass-panel rounded-2xl p-6 sm:p-8 space-y-6 hidden">
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-2">Отслеживание обращения</h3>
+                    <p class="text-xs text-slate-400">Введи 4-значный уникальный код, который ты получил при отправке обращения.</p>
+                </div>
+
+                <div class="flex gap-3 max-w-md">
+                    <input type="text" id="track-code-input" placeholder="Например: A472" class="glass-input rounded-xl px-4 py-3 text-sm uppercase font-mono tracking-widest w-full">
+                    <button onclick="trackReport()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-3 rounded-xl transition text-sm flex items-center gap-2 shrink-0">
+                        <i class="fa-solid fa-magnifying-glass"></i> Найти
+                    </button>
+                </div>
+
+                <!-- Found Report Box -->
+                <div id="tracked-report-result" class="hidden space-y-6 pt-4 border-t border-white/10">
+                    <!-- Status Header -->
+                    <div class="glass-panel rounded-xl p-5 border border-indigo-500/30 space-y-3">
+                        <div class="flex justify-between items-start flex-wrap gap-2">
+                            <div>
+                                <div class="text-xs text-slate-400">Код обращения: <span id="res-code" class="font-mono text-indigo-300 font-bold"></span></div>
+                                <div id="res-category" class="text-base font-bold text-white mt-1"></div>
+                            </div>
+                            <span id="res-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold"></span>
+                        </div>
+                        <div class="text-xs text-slate-400">Школа: <span id="res-school" class="text-slate-200"></span></div>
+                    </div>
+
+                    <!-- Chat Container -->
+                    <div class="glass-panel rounded-xl p-5 border border-white/10 space-y-4">
+                        <h4 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-indigo-400"></i> Анонимный диалог с психологом
+                        </h4>
+                        
+                        <div id="student-chat-box" class="h-64 overflow-y-auto space-y-3 p-3 bg-slate-950/50 rounded-xl custom-scrollbar">
+                            <!-- Chat messages injected here -->
+                        </div>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="student-chat-input" placeholder="Напиши ответ..." class="glass-input rounded-xl px-4 py-2.5 text-sm w-full">
+                            <button onclick="sendStudentChatMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition shrink-0">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIEW 2: PSYCHOLOGIST ==================== -->
+        <section id="view-psychologist" class="space-y-6 hidden">
+            <!-- Login Box if not authenticated -->
+            <div id="psych-login-box" class="max-w-md mx-auto glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 flex items-center justify-center mx-auto text-xl">
+                        <i class="fa-solid fa-user-nurse"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Вход для психолога</h3>
+                    <p class="text-xs text-slate-400">Для доступа к обращениям вашей школы</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Школа</label>
+                        <select id="psych-school-select" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
+                            <option value="" disabled selected>Загрузка школ...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Код доступа психолога</label>
+                        <div class="relative">
+                            <input type="password" id="psych-code-input" placeholder="Введите персональный код" class="w-full glass-input rounded-xl px-4 py-3 text-sm pr-10">
+                            <button type="button" onclick="togglePasswordVisibility('psych-code-input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="loginPsychologist()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition text-sm shadow-lg shadow-indigo-600/30">
+                        Войти в кабинет
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard after login -->
+            <div id="psych-dashboard" class="space-y-6 hidden">
+                <div class="flex justify-between items-center bg-slate-900/60 p-4 rounded-xl border border-white/10">
+                    <div>
+                        <span class="text-xs text-indigo-400 font-semibold uppercase tracking-wider">Кабинет Психолога</span>
+                        <h3 id="psych-school-title" class="text-lg font-bold text-white">Школа №--</h3>
+                    </div>
+                    <button onclick="logoutPsychologist()" class="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10">
+                        <i class="fa-solid fa-right-from-bracket"></i> Выйти
+                    </button>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
+                    <button onclick="filterPsychReports('all')" id="psych-filter-all" class="px-3.5 py-2 rounded-xl glass-panel text-indigo-300 font-semibold border-indigo-500">Все</button>
+                    <button onclick="filterPsychReports('urgent')" id="psych-filter-urgent" class="px-3.5 py-2 rounded-xl glass-panel text-slate-400 hover:text-white">🚨 Срочные</button>
+                    <button onclick="filterPsychReports('new')" id="psych-filter-new" class="px-3.5 py-2 rounded-xl glass-panel text-slate-400 hover:text-white">Новые</button>
+                    <button onclick="filterPsychReports('escalated')" id="psych-filter-escalated" class="px-3.5 py-2 rounded-xl glass-panel text-slate-400 hover:text-white">Переданы директору</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- List of reports -->
+                    <div class="md:col-span-1 space-y-3 custom-scrollbar max-h-[600px] overflow-y-auto pr-1" id="psych-reports-list">
+                        <!-- Cards dynamically rendered here -->
+                    </div>
+
+                    <!-- Detailed View & Action Panel -->
+                    <div class="md:col-span-2 glass-panel rounded-2xl p-6 border border-white/10" id="psych-detail-container">
+                        <div class="text-center py-16 text-slate-500">
+                            <i class="fa-regular fa-folder-open text-4xl mb-3 block opacity-50"></i>
+                            Выберите обращение из списка слева для просмотра деталей и чата.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIEW 3: DIRECTOR ==================== -->
+        <section id="view-director" class="space-y-6 hidden">
+            <!-- Login Box -->
+            <div id="dir-login-box" class="max-w-md mx-auto glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-600/30 border border-amber-500/40 text-amber-300 flex items-center justify-center mx-auto text-xl">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Панель Директора</h3>
+                    <p class="text-xs text-slate-400">Контроль переданных сигналов (без доступа к тексту учеников)</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Школа</label>
+                        <select id="dir-school-select" class="w-full glass-input rounded-xl px-4 py-3 text-sm">
+                            <option value="" disabled selected>Загрузка школ...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Код директора</label>
+                        <div class="relative">
+                            <input type="password" id="dir-code-input" placeholder="Введите код доступа" class="w-full glass-input rounded-xl px-4 py-3 text-sm pr-10">
+                            <button type="button" onclick="togglePasswordVisibility('dir-code-input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="loginDirector()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-xl transition text-sm shadow-lg shadow-amber-600/30">
+                        Войти в систему
+                    </button>
+                </div>
+            </div>
+
+            <!-- Director Dashboard -->
+            <div id="dir-dashboard" class="space-y-6 hidden">
+                <div class="flex justify-between items-center bg-slate-900/60 p-4 rounded-xl border border-white/10">
+                    <div>
+                        <span class="text-xs text-amber-400 font-semibold uppercase tracking-wider">Отчеты для Администрации</span>
+                        <h3 id="dir-school-title" class="text-lg font-bold text-white">Школа №--</h3>
+                    </div>
+                    <button onclick="logoutDirector()" class="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10">
+                        <i class="fa-solid fa-right-from-bracket"></i> Выйти
+                    </button>
+                </div>
+
+                <!-- Info note about Privacy -->
+                <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3 text-xs text-amber-200">
+                    <i class="fa-solid fa-shield-halved text-lg shrink-0 mt-0.5 text-amber-400"></i>
+                    <div>
+                        <strong>Политика конфиденциальности:</strong> Согласно стандартам анонимности, вы видите только тему обращения, класс и комментарий психолога. Личный текст ученика защищен.
+                    </div>
+                </div>
+
+                <!-- Escalated Cases Table/Cards -->
+                <div class="glass-panel rounded-2xl p-6 border border-white/10 space-y-4">
+                    <h4 class="text-sm font-semibold text-slate-200">Переданные обращения от психолога</h4>
+                    
+                    <div id="dir-escalated-list" class="space-y-3">
+                        <!-- Items injected here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIEW 4: DEV / ADMIN ==================== -->
+        <section id="view-dev" class="space-y-6 hidden">
+            <!-- Login -->
+            <div id="dev-login-box" class="max-w-md mx-auto glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center mx-auto text-xl">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Разработчик / Dev Master</h3>
+                    <p class="text-xs text-slate-400">Управление базой данных и эмулятором</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Master Key</label>
+                        <div class="relative">
+                            <input type="password" id="dev-code-input" placeholder="Введите мастер-код" class="w-full glass-input rounded-xl px-4 py-3 text-sm pr-10">
+                            <button type="button" onclick="togglePasswordVisibility('dev-code-input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="loginDev()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-xl transition text-sm shadow-lg shadow-purple-600/30">
+                        Авторизоваться
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dev Dashboard -->
+            <div id="dev-dashboard" class="space-y-6 hidden">
+                <div class="flex justify-between items-center bg-slate-900/60 p-4 rounded-xl border border-white/10">
+                    <div>
+                        <span class="text-xs text-purple-400 font-semibold uppercase tracking-wider">Панель управления системой</span>
+                        <h3 class="text-lg font-bold text-white">Глобальный обзор</h3>
+                    </div>
+                    <button onclick="logoutDev()" class="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10">
+                        <i class="fa-solid fa-right-from-bracket"></i> Выйти
+                    </button>
+                </div>
+
+                <!-- Stats summary -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="glass-panel p-4 rounded-xl border border-white/10 text-center">
+                        <div class="text-2xl font-bold text-white" id="dev-stat-total">0</div>
+                        <div class="text-xs text-slate-400 mt-1">Всего обращений</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border border-rose-500/30 text-center">
+                        <div class="text-2xl font-bold text-rose-400" id="dev-stat-urgent">0</div>
+                        <div class="text-xs text-slate-400 mt-1">Срочных</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border border-amber-500/30 text-center">
+                        <div class="text-2xl font-bold text-amber-400" id="dev-stat-escalated">0</div>
+                        <div class="text-xs text-slate-400 mt-1">У Директора</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border border-emerald-500/30 text-center">
+                        <div class="text-2xl font-bold text-emerald-400" id="dev-stat-resolved">0</div>
+                        <div class="text-xs text-slate-400 mt-1">Решено</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="glass-panel rounded-2xl p-6 border border-white/10 space-y-4">
+                    <h4 class="text-sm font-semibold text-slate-200">Управление данными</h4>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="generateTestData()" class="bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Сгенерировать демо-данные
+                        </button>
+                        <button onclick="clearAllData()" class="bg-rose-600/30 hover:bg-rose-600/50 text-rose-200 border border-rose-500/40 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                            <i class="fa-solid fa-trash-can"></i> Сбросить всю базу данных
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Raw JSON database inspector -->
+                <div class="glass-panel rounded-2xl p-6 border border-white/10 space-y-3">
+                    <h4 class="text-sm font-semibold text-slate-200">Инспектор базы (LocalStorage JSON)</h4>
+                    <pre id="dev-json-view" class="bg-slate-950 p-4 rounded-xl text-xs font-mono text-emerald-400 h-64 overflow-y-auto custom-scrollbar border border-white/5"></pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="fixed bottom-6 right-6 z-50">
+        <button onclick="toggleSosModal(true)" class="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white p-4 rounded-full shadow-2xl shadow-rose-600/50 flex items-center justify-center transition-all duration-300 transform hover:scale-110 group border border-rose-400/40">
+            <i class="fa-solid fa-phone-volume text-2xl animate-pulse"></i>
+            <span class="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-xs font-bold uppercase tracking-wider">
+                Экстренная помощь
+            </span>
+        </button>
+    </div>
+
+    <footer class="relative z-10 border-t border-white/5 py-6 px-4 bg-slate-950/60">
+        <div class="max-w-5xl mx-auto space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
+                <div>HearMe © 2026 — Безопасное пространство для детей и подростков</div>
+                <button onclick="toggleTestingHelper()" class="text-slate-400 hover:text-indigo-300 underline flex items-center gap-1 transition">
+                    <i class="fa-solid fa-key text-xs"></i> Инструкция по кодам для тестирования
+                </button>
+            </div>
+
+            <!-- Collapsible test codes block (kept safe and discrete) -->
+            <div id="testing-helper-box" class="hidden glass-panel p-4 rounded-xl border border-indigo-500/20 text-xs text-slate-300 space-y-2">
+                <div class="font-bold text-indigo-300 flex items-center justify-between">
+                    <span><i class="fa-solid fa-flask mr-1"></i> Тестовые коды для проверки системы:</span>
+                    <button onclick="toggleTestingHelper()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div class="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
+                        <div class="font-semibold text-slate-200 mb-1">Школы & Ученики:</div>
+                        <p class="text-slate-400">Школа №1: Код <code class="text-indigo-300 bg-slate-800 px-1 py-0.5 rounded">101</code></p>
+                        <p class="text-slate-400">Школа №5: Код <code class="text-indigo-300 bg-slate-800 px-1 py-0.5 rounded">105</code></p>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
+                        <div class="font-semibold text-slate-200 mb-1">Психолог & Директор:</div>
+                        <p class="text-slate-400">Психолог №1: Код <code class="text-indigo-300 bg-slate-800 px-1 py-0.5 rounded">PSY101</code></p>
+                        <p class="text-slate-400">Директор №1: Код <code class="text-amber-300 bg-slate-800 px-1 py-0.5 rounded">DIR101</code></p>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
+                        <div class="font-semibold text-slate-200 mb-1">Разработчик (Dev):</div>
+                        <p class="text-slate-400">Master Key: <code class="text-purple-300 bg-slate-800 px-1 py-0.5 rounded">DEV777</code></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 1. SOS Emergency Hotline Modal -->
+    <div id="sos-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl max-w-lg w-full p-6 border border-rose-500/40 space-y-6 relative animate-scaleUp">
+            <button onclick="toggleSosModal(false)" class="absolute right-4 top-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="flex items-center gap-3 text-rose-400">
+                <i class="fa-solid fa-phone-volume text-3xl"></i>
+                <div>
+                    <h3 class="text-xl font-bold text-white">Горячие линии помощи</h3>
+                    <p class="text-xs text-rose-200/80">Бесплатно, круглосуточно и анонимно</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <a href="tel:88002000122" class="block p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 hover:border-rose-400 transition">
+                    <div class="text-xs text-slate-400">Единый Детский Телефон Доверия</div>
+                    <div class="text-xl font-bold text-rose-300 font-mono mt-0.5">8-800-2000-122</div>
+                </a>
+                <a href="tel:112" class="block p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 hover:border-rose-400 transition">
+                    <div class="text-xs text-slate-400">Единая служба спасения (Экстренная помощь)</div>
+                    <div class="text-xl font-bold text-rose-300 font-mono mt-0.5">112</div>
+                </a>
+            </div>
+
+            <p class="text-xs text-slate-400 text-center">
+                Если тебе или твоим близким угрожает прямая опасность, не жди — позвони прямо сейчас.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. Submission Success Modal with Track Code -->
+    <div id="success-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl max-w-md w-full p-6 sm:p-8 border border-emerald-500/40 text-center space-y-6">
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto text-3xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            
+            <div class="space-y-2">
+                <h3 class="text-2xl font-bold text-white">Обращение отправлено!</h3>
+                <p class="text-xs text-slate-300">Твой текст отправлен психологу. Твой личный код отслеживания:</p>
+            </div>
+
+            <div class="bg-slate-900 border border-emerald-500/40 rounded-2xl p-4">
+                <div id="generated-code-display" class="text-3xl font-mono font-bold text-emerald-400 tracking-wider">A000</div>
+                <button onclick="copyTrackCode()" class="mt-2 text-xs text-indigo-300 hover:text-indigo-100 flex items-center justify-center gap-1 mx-auto">
+                    <i class="fa-regular fa-copy"></i> Скопировать код
+                </button>
+            </div>
+
+            <p class="text-xs text-rose-300 bg-rose-950/30 p-3 rounded-xl border border-rose-500/20">
+                ⚠️ <strong>Важно:</strong> Сохрани или запомни этот код! Это единственный способ проверить ответ психолога.
+            </p>
+
+            <button onclick="closeSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition text-sm">
+                Понятно
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Default Schools Database
+        const DEFAULT_SCHOOLS = [
+            { id: 'sch_1', name: 'Школа №1', code: '101', psychCode: 'PSY101', dirCode: 'DIR101' },
+            { id: 'sch_5', name: 'Лицей №5', code: '105', psychCode: 'PSY105', dirCode: 'DIR105' },
+            { id: 'sch_12', name: 'Гимназия №12', code: '112', psychCode: 'PSY112', dirCode: 'DIR112' }
+        ];
+
+        // Master Dev Code
+        const MASTER_DEV_CODE = 'DEV777';
+
+        // State variables
+        let reportsDB = [];
+        let activeRole = 'student';
+        let currentPsychSchoolId = null;
+        let currentDirSchoolId = null;
+        let activePsychFilter = 'all';
+        let selectedPsychReportId = null;
+
+        // Init App
+        window.onload = function() {
+            initStorage();
+            loadSchoolOptions();
+            switchRole('student');
+        };
+
+        // Initialize LocalStorage Data
+        function initStorage() {
+            const stored = localStorage.getItem('hearme_reports');
+            if (stored) {
+                try {
+                    reportsDB = JSON.parse(stored);
+                } catch(e) {
+                    reportsDB = [];
+                }
+            } else {
+                // Pre-populate with realistic demo data
+                reportsDB = [
+                    {
+                        id: 'rep_1',
+                        code: 'B821',
+                        schoolId: 'sch_1',
+                        className: '8-А',
+                        category: 'Буллинг / Травля',
+                        text: 'Меня и еще одного одноклассника постоянно дразнят в коридоре старшеклассники. Боюсь ходить на перерывах.',
+                        fileUrl: null,
+                        isUrgent: true,
+                        createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+                        status: 'in_progress', // 'new', 'in_progress', 'resolved'
+                        escalated: false,
+                        directorComment: '',
+                        chat: [
+                            { sender: 'psychologist', text: 'Здравствуй! Я услышал тебя. Спасибо за смелость. Заходи в кабинет на 2 этаже или напиши, когда удобнее поговорить.', timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
+                            { sender: 'student', text: 'Здравствуйте. Завтра после 3 урока смогу зайти.', timestamp: new Date(Date.now() - 3600000 * 1).toISOString() }
+                        ]
+                    },
+                    {
+                        id: 'rep_2',
+                        code: 'K394',
+                        schoolId: 'sch_1',
+                        className: '10-Б',
+                        category: 'Личное / Психология',
+                        text: 'Очень сильно тревожусь из-за предстоящих экзаменов. Не могу спать ночью.',
+                        fileUrl: null,
+                        isUrgent: false,
+                        createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+                        status: 'escalated',
+                        escalated: true,
+                        directorComment: 'Запланирована тренинговая встреча по сдаче экзаменов для 10-11 классов.',
+                        chat: [
+                            { sender: 'psychologist', text: 'Привет! Тревога перед экзаменами — частая вещь. Давай разберем техники дыхания.', timestamp: new Date(Date.now() - 3600000 * 20).toISOString() }
+                        ]
+                    }
+                ];
+                saveStorage();
+            }
+        }
+
+        function saveStorage() {
+            localStorage.setItem('hearme_reports', JSON.stringify(reportsDB));
+            if (activeRole === 'dev') renderDevDashboard();
+        }
+
+        // Fill Select dropdowns
+        function loadSchoolOptions() {
+            const selects = ['student-school-select', 'psych-school-select', 'dir-school-select'];
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.innerHTML = '<option value="" disabled selected>Выберите школу</option>' +
+                        DEFAULT_SCHOOLS.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                }
+            });
+        }
+
+        // Switch Roles
+        function switchRole(role) {
+            activeRole = role;
+            ['student', 'psychologist', 'director', 'dev'].forEach(r => {
+                const view = document.getElementById(`view-${r}`);
+                const nav = document.getElementById(`nav-${r}`);
+                if (view) view.classList.toggle('hidden', r !== role);
+                if (nav) {
+                    if (r === role) {
+                        nav.className = "px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-white bg-indigo-600 shadow-md";
+                    } else {
+                        nav.className = "px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-slate-400 hover:text-white";
+                    }
+                }
+            });
+
+            if (role === 'dev' && currentDevLoggedIn) renderDevDashboard();
+        }
+
+        // Toggle Password Input Visibility (Eye icon)
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        }
+
+        // Toggle Collapsible Testing Helper
+        function toggleTestingHelper() {
+            const box = document.getElementById('testing-helper-box');
+            box.classList.toggle('hidden');
+        }
+
+        // Student Tab Switching
+        function switchStudentTab(tab) {
+            const sendView = document.getElementById('student-tab-send');
+            const trackView = document.getElementById('student-tab-track');
+            const btnSend = document.getElementById('tab-btn-send');
+            const btnTrack = document.getElementById('tab-btn-track');
+
+            if (tab === 'send') {
+                sendView.classList.remove('hidden');
+                trackView.classList.add('hidden');
+                btnSend.className = "pb-3 text-indigo-400 border-b-2 border-indigo-500 font-semibold flex items-center gap-2";
+                btnTrack.className = "pb-3 text-slate-400 hover:text-slate-200 flex items-center gap-2";
+            } else {
+                sendView.classList.add('hidden');
+                trackView.classList.remove('hidden');
+                btnTrack.className = "pb-3 text-indigo-400 border-b-2 border-indigo-500 font-semibold flex items-center gap-2";
+                btnSend.className = "pb-3 text-slate-400 hover:text-slate-200 flex items-center gap-2";
+            }
+        }
+
+        // Handle Report Submission
+        function handleReportSubmit(e) {
+            e.preventDefault();
+
+            const schoolId = document.getElementById('student-school-select').value;
+            const inputCode = document.getElementById('student-school-code').value.trim();
+            const schoolObj = DEFAULT_SCHOOLS.find(s => s.id === schoolId);
+
+            if (!schoolObj || schoolObj.code !== inputCode) {
+                alertModal('Ошибка авторизации школы', 'Введен неверный код школы. Обратитесь к классному руководителю или администрации.');
+                return;
+            }
+
+            const category = document.querySelector('input[name="category"]:checked')?.value;
+            const text = document.getElementById('student-text').value.trim();
+            const className = document.getElementById('student-class').value.trim() || 'Не указан';
+            const isUrgent = document.querySelector('input[name="is_urgent"]:checked')?.value === 'yes';
+
+            if (!category || !text) {
+                alertModal('Заполните поля', 'Пожалуйста, выберите тему и опишите ситуацию.');
+                return;
+            }
+
+            // Generate 4-character code (e.g., A842)
+            const randomCode = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(100 + Math.random() * 900);
+
+            const newReport = {
+                id: 'rep_' + Date.now(),
+                code: randomCode,
+                schoolId: schoolId,
+                className: className,
+                category: category,
+                text: text,
+                fileUrl: null,
+                isUrgent: isUrgent,
+                createdAt: new Date().toISOString(),
+                status: 'new',
+                escalated: false,
+                directorComment: '',
+                chat: []
+            };
+
+            reportsDB.push(newReport);
+            saveStorage();
+
+            // Clear inputs
+            document.getElementById('report-form').reset();
+
+            // Display success code
+            document.getElementById('generated-code-display').innerText = randomCode;
+            document.getElementById('success-modal').classList.remove('hidden');
+
+            if (isUrgent) {
+                toggleSosModal(true);
+            }
+        }
+
+        function copyTrackCode() {
+            const code = document.getElementById('generated-code-display').innerText;
+            navigator.clipboard.writeText(code);
+            alertModal('Успешно', 'Код скопирован в буфер обмена!');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+
+        // Track Report Logic
+        let activeTrackedReport = null;
+
+        function trackReport() {
+            const codeInput = document.getElementById('track-code-input').value.trim().toUpperCase();
+            if (!codeInput) return;
+
+            const rep = reportsDB.find(r => r.code === codeInput);
+            const resBox = document.getElementById('tracked-report-result');
+
+            if (!rep) {
+                resBox.classList.add('hidden');
+                alertModal('Обращение не найдено', 'Проверьте правильность кода обращения.');
+                return;
+            }
+
+            activeTrackedReport = rep;
+            resBox.classList.remove('hidden');
+
+            document.getElementById('res-code').innerText = rep.code;
+            document.getElementById('res-category').innerText = rep.category;
+
+            const schoolObj = DEFAULT_SCHOOLS.find(s => s.id === rep.schoolId);
+            document.getElementById('res-school').innerText = schoolObj ? schoolObj.name : 'Школа';
+
+            // Status Badge
+            const badge = document.getElementById('res-status-badge');
+            if (rep.status === 'resolved') {
+                badge.innerText = 'Решено';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+            } else if (rep.status === 'in_progress' || rep.escalated) {
+                badge.innerText = 'В работе';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+            } else {
+                badge.innerText = 'Получено';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-slate-700/50 text-slate-300 border border-slate-600';
+            }
+
+            renderStudentChat();
+        }
+
+        function renderStudentChat() {
+            if (!activeTrackedReport) return;
+            const chatBox = document.getElementById('student-chat-box');
+            chatBox.innerHTML = '';
+
+            if (activeTrackedReport.chat.length === 0) {
+                chatBox.innerHTML = '<div class="text-xs text-slate-500 text-center py-8">Психолог ещё не ответил. Ваше обращение обрабатывается.</div>';
+                return;
+            }
+
+            activeTrackedReport.chat.forEach(msg => {
+                const isStudent = msg.sender === 'student';
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex flex-col ${isStudent ? 'items-end' : 'items-start'}`;
+
+                const inner = `
+                    <div class="max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed ${
+                        isStudent 
+                        ? 'bg-indigo-600 text-white rounded-tr-none' 
+                        : 'bg-slate-800 text-slate-200 border border-white/10 rounded-tl-none'
+                    }">
+                        <div class="font-semibold text-[10px] opacity-70 mb-1">${isStudent ? 'Ты' : 'Школьный психолог'}</div>
+                        ${escapeHtml(msg.text)}
+                    </div>
+                `;
+                msgDiv.innerHTML = inner;
+                chatBox.appendChild(msgDiv);
+            });
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendStudentChatMessage() {
+            if (!activeTrackedReport) return;
+            const input = document.getElementById('student-chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            activeTrackedReport.chat.push({
+                sender: 'student',
+                text: text,
+                timestamp: new Date().toISOString()
+            });
+
+            if (activeTrackedReport.status === 'new') {
+                activeTrackedReport.status = 'in_progress';
+            }
+
+            saveStorage();
+            input.value = '';
+            renderStudentChat();
+        }
+
+        // ==================== PSYCHOLOGIST LOGIC ====================
+        function loginPsychologist() {
+            const schoolId = document.getElementById('psych-school-select').value;
+            const code = document.getElementById('psych-code-input').value.trim();
+            const school = DEFAULT_SCHOOLS.find(s => s.id === schoolId);
+
+            if (!school || school.psychCode !== code) {
+                alertModal('Ошибка входа', 'Неверный код доступа психолога.');
+                return;
+            }
+
+            currentPsychSchoolId = schoolId;
+            document.getElementById('psych-login-box').classList.add('hidden');
+            document.getElementById('psych-dashboard').classList.remove('hidden');
+            document.getElementById('psych-school-title').innerText = school.name;
+
+            renderPsychReportsList();
+        }
+
+        function logoutPsychologist() {
+            currentPsychSchoolId = null;
+            document.getElementById('psych-dashboard').classList.add('hidden');
+            document.getElementById('psych-login-box').classList.remove('hidden');
+            document.getElementById('psych-code-input').value = '';
+        }
+
+        function filterPsychReports(filter) {
+            activePsychFilter = filter;
+            ['all', 'urgent', 'new', 'escalated'].forEach(f => {
+                const btn = document.getElementById(`psych-filter-${f}`);
+                if (btn) {
+                    btn.className = f === filter 
+                        ? 'px-3.5 py-2 rounded-xl glass-panel text-indigo-300 font-semibold border-indigo-500' 
+                        : 'px-3.5 py-2 rounded-xl glass-panel text-slate-400 hover:text-white';
+                }
+            });
+            renderPsychReportsList();
+        }
+
+        function renderPsychReportsList() {
+            const container = document.getElementById('psych-reports-list');
+            container.innerHTML = '';
+
+            let list = reportsDB.filter(r => r.schoolId === currentPsychSchoolId);
+
+            if (activePsychFilter === 'urgent') list = list.filter(r => r.isUrgent);
+            if (activePsychFilter === 'new') list = list.filter(r => r.status === 'new');
+            if (activePsychFilter === 'escalated') list = list.filter(r => r.escalated);
+
+            if (list.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-500 p-4 text-center">Обращений не найдено.</div>';
+                return;
+            }
+
+            list.forEach(r => {
+                const card = document.createElement('div');
+                const isSelected = r.id === selectedPsychReportId;
+                card.onclick = () => selectPsychReport(r.id);
+
+                card.className = `glass-panel rounded-xl p-4 cursor-pointer transition border ${
+                    isSelected ? 'border-indigo-500 bg-indigo-950/40' : 'border-white/5 hover:border-white/20'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-mono font-bold text-indigo-300">#${r.code}</span>
+                        ${r.isUrgent ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">🚨 СРОЧНО</span>' : ''}
+                    </div>
+                    <div class="text-xs font-semibold text-white truncate">${escapeHtml(r.category)}</div>
+                    <div class="text-[11px] text-slate-400 mt-1 flex justify-between">
+                        <span>Класс: ${escapeHtml(r.className)}</span>
+                        <span>${new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectPsychReport(repId) {
+            selectedPsychReportId = repId;
+            renderPsychReportsList();
+
+            const rep = reportsDB.find(r => r.id === repId);
+            const detailBox = document.getElementById('psych-detail-container');
+
+            if (!rep) return;
+
+            detailBox.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div class="flex justify-between items-start border-b border-white/10 pb-4">
+                        <div>
+                            <div class="text-xs text-slate-400">Код: <span class="font-mono text-indigo-300 font-bold">${rep.code}</span> | Класс: ${escapeHtml(rep.className)}</div>
+                            <h3 class="text-lg font-bold text-white mt-1">${escapeHtml(rep.category)}</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleResolveReport('${rep.id}')" class="text-xs px-3 py-1.5 rounded-lg border ${
+                                rep.status === 'resolved' 
+                                ? 'bg-emerald-600/30 text-emerald-200 border-emerald-500/40' 
+                                : 'bg-slate-800 text-slate-300 hover:border-slate-500'
+                            }">
+                                ${rep.status === 'resolved' ? '✓ Решено' : 'Отметить решенным'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Full text for psychologist -->
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
+                        <div class="text-xs font-semibold text-slate-400">Текст обращения (конфиденциально):</div>
+                        <div class="text-xs text-slate-200 leading-relaxed">${escapeHtml(rep.text)}</div>
+                    </div>
+
+                    <!-- Escalate section -->
+                    <div class="p-4 bg-amber-950/30 border border-amber-500/30 rounded-xl space-y-3">
+                        <div class="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-tie"></i> Передача сигнала Директору
+                        </div>
+                        <p class="text-[11px] text-amber-200/70">
+                            Директор УВИДИТ только категорию (${escapeHtml(rep.category)}) и твой комментарий. Сам текст ученика НЕ передается.
+                        </p>
+                        <div class="flex gap-2">
+                            <input type="text" id="escalate-comment-${rep.id}" value="${escapeHtml(rep.directorComment || '')}" placeholder="Краткая заметка для директора (1 строка)" class="glass-input rounded-xl px-3 py-2 text-xs w-full">
+                            <button onclick="escalateToDirector('${rep.id}')" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shrink-0">
+                                ${rep.escalated ? 'Обновить заметку' : 'Передать'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chat with Student -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-semibold text-slate-300">Анонимный чат с учеником</h4>
+                        <div id="psych-chat-box" class="h-48 overflow-y-auto space-y-3 p-3 bg-slate-950/50 rounded-xl custom-scrollbar border border-white/5">
+                            ${rep.chat.length === 0 ? '<div class="text-xs text-slate-500 text-center py-6">Сообщений пока нет. Напишите первым.</div>' : ''}
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="psych-chat-input" placeholder="Написать ответ ученику..." class="glass-input rounded-xl px-4 py-2 text-xs w-full">
+                            <button onclick="sendPsychChatMessage('${rep.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shrink-0">
+                                Отправить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            renderPsychChatInsideDetail(rep);
+        }
+
+        function renderPsychChatInsideDetail(rep) {
+            const chatBox = document.getElementById('psych-chat-box');
+            if (!chatBox || rep.chat.length === 0) return;
+
+            chatBox.innerHTML = '';
+            rep.chat.forEach(msg => {
+                const isPsych = msg.sender === 'psychologist';
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex flex-col ${isPsych ? 'items-end' : 'items-start'}`;
+
+                msgDiv.innerHTML = `
+                    <div class="max-w-[80%] rounded-2xl p-2.5 text-xs leading-relaxed ${
+                        isPsych 
+                        ? 'bg-indigo-600 text-white rounded-tr-none' 
+                        : 'bg-slate-800 text-slate-200 border border-white/10 rounded-tl-none'
+                    }">
+                        <div class="font-semibold text-[10px] opacity-70 mb-0.5">${isPsych ? 'Вы (Психолог)' : 'Ученик'}</div>
+                        ${escapeHtml(msg.text)}
+                    </div>
+                `;
+                chatBox.appendChild(msgDiv);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendPsychChatMessage(repId) {
+            const rep = reportsDB.find(r => r.id === repId);
+            const input = document.getElementById('psych-chat-input');
+            const text = input.value.trim();
+            if (!rep || !text) return;
+
+            rep.chat.push({
+                sender: 'psychologist',
+                text: text,
+                timestamp: new Date().toISOString()
+            });
+
+            if (rep.status === 'new') rep.status = 'in_progress';
+
+            saveStorage();
+            selectPsychReport(repId);
+        }
+
+        function toggleResolveReport(repId) {
+            const rep = reportsDB.find(r => r.id === repId);
+            if (!rep) return;
+            rep.status = rep.status === 'resolved' ? 'in_progress' : 'resolved';
+            saveStorage();
+            selectPsychReport(repId);
+        }
+
+        function escalateToDirector(repId) {
+            const rep = reportsDB.find(r => r.id === repId);
+            const commentInput = document.getElementById(`escalate-comment-${repId}`);
+            if (!rep || !commentInput) return;
+
+            rep.escalated = true;
+            rep.directorComment = commentInput.value.trim();
+            saveStorage();
+            alertModal('Успешно', 'Информация передана директору школы.');
+            selectPsychReport(repId);
+        }
+
+        // ==================== DIRECTOR LOGIC ====================
+        function loginDirector() {
+            const schoolId = document.getElementById('dir-school-select').value;
+            const code = document.getElementById('dir-code-input').value.trim();
+            const school = DEFAULT_SCHOOLS.find(s => s.id === schoolId);
+
+            if (!school || school.dirCode !== code) {
+                alertModal('Ошибка входа', 'Неверный код доступа директора.');
+                return;
+            }
+
+            currentDirSchoolId = schoolId;
+            document.getElementById('dir-login-box').classList.add('hidden');
+            document.getElementById('dir-dashboard').classList.remove('hidden');
+            document.getElementById('dir-school-title').innerText = school.name;
+
+            renderDirectorDashboard();
+        }
+
+        function logoutDirector() {
+            currentDirSchoolId = null;
+            document.getElementById('dir-dashboard').classList.add('hidden');
+            document.getElementById('dir-login-box').classList.remove('hidden');
+            document.getElementById('dir-code-input').value = '';
+        }
+
+        function renderDirectorDashboard() {
+            const listContainer = document.getElementById('dir-escalated-list');
+            listContainer.innerHTML = '';
+
+            const escalatedList = reportsDB.filter(r => r.schoolId === currentDirSchoolId && r.escalated);
+
+            if (escalatedList.length === 0) {
+                listContainer.innerHTML = '<div class="text-xs text-slate-500 py-8 text-center">На данный момент переданных сигналов нет.</div>';
+                return;
+            }
+
+            escalatedList.forEach(r => {
+                const card = document.createElement('div');
+                card.className = "p-4 rounded-xl bg-slate-900/80 border border-amber-500/20 space-y-2";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-mono text-slate-400">Код: #${r.code}</span>
+                            <span class="ml-2 text-xs font-semibold text-amber-300">Класс: ${escapeHtml(r.className)}</span>
+                        </div>
+                        ${r.isUrgent ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">🚨 СРОЧНО</span>' : ''}
+                    </div>
+                    <div class="text-sm font-bold text-white">Тема: ${escapeHtml(r.category)}</div>
+                    <div class="p-3 bg-amber-950/20 rounded-lg border border-amber-500/10 text-xs text-amber-100/90">
+                        <strong>Комментарий психолога:</strong> ${escapeHtml(r.directorComment || 'Без комментария')}
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        // ==================== DEV / ADMIN LOGIC ====================
+        let currentDevLoggedIn = false;
+
+        function loginDev() {
+            const code = document.getElementById('dev-code-input').value.trim();
+            if (code !== MASTER_DEV_CODE) {
+                alertModal('Ошибка доступа', 'Неверный Master Key разработчика.');
+                return;
+            }
+
+            currentDevLoggedIn = true;
+            document.getElementById('dev-login-box').classList.add('hidden');
+            document.getElementById('dev-dashboard').classList.remove('hidden');
+
+            renderDevDashboard();
+        }
+
+        function logoutDev() {
+            currentDevLoggedIn = false;
+            document.getElementById('dev-dashboard').classList.add('hidden');
+            document.getElementById('dev-login-box').classList.remove('hidden');
+            document.getElementById('dev-code-input').value = '';
+        }
+
+        function renderDevDashboard() {
+            document.getElementById('dev-stat-total').innerText = reportsDB.length;
+            document.getElementById('dev-stat-urgent').innerText = reportsDB.filter(r => r.isUrgent).length;
+            document.getElementById('dev-stat-escalated').innerText = reportsDB.filter(r => r.escalated).length;
+            document.getElementById('dev-stat-resolved').innerText = reportsDB.filter(r => r.status === 'resolved').length;
+
+            document.getElementById('dev-json-view').innerText = JSON.stringify(reportsDB, null, 2);
+        }
+
+        function generateTestData() {
+            localStorage.removeItem('hearme_reports');
+            initStorage();
+            renderDevDashboard();
+            alertModal('Данные сброшены', 'Демонстрационные данные успешно сгенерированы.');
+        }
+
+        function clearAllData() {
+            reportsDB = [];
+            saveStorage();
+            renderDevDashboard();
+            alertModal('Очистка', 'База данных полностью очищена.');
+        }
+
+        // ==================== UTILS ====================
+        function toggleSosModal(show) {
+            const modal = document.getElementById('sos-modal');
+            modal.classList.toggle('hidden', !show);
+        }
+
+        function alertModal(title, msg) {
+            const modal = document.createElement('div');
+            modal.className = "fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4";
+            modal.innerHTML = `
+                <div class="glass-panel rounded-2xl max-w-sm w-full p-6 border border-white/20 text-center space-y-4">
+                    <h3 class="text-base font-bold text-white">${escapeHtml(title)}</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">${escapeHtml(msg)}</p>
+                    <button onclick="this.closest('.fixed').remove()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-xs transition">
+                        Закрыть
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
